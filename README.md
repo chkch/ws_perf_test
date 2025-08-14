@@ -6,7 +6,7 @@ nodejs版的websocket压力测试工具
 
 ```shell
 - 克隆代码仓库
-    git clone https://github.com/chkch/websocket-pressure-test.git 
+    git clone https://github.com/chkch/ws_perf_test.git 
 - 将本地项目全局安装到系统中
     npm install && npm install . -g 
     chmod +x /usr/local/bin/ws-perf-test 

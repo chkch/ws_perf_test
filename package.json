@@ -1,28 +1,24 @@
 {
-  "name": "websocket-pressure-test",
-  "version": "1.1.0",
+  "name": "ws_perf_test",
+  "version": "1.0.0",
   "description": "websocket压力测试",
-  "main": "src/webSocketPressureTest.js",
+  "main": "src/ws_perf_test.js",
   "scripts": {
-    "test": "node ./src/websocket-pressure-test.js",
+    "test": "node ./src/ws_perf_test.js",
     "fix": "./node_modules/.bin/eslint --ext .js,.html src/ --fix"
   },
   "bin": {
-    "ws-perf-test": "./src/websocket-pressure-test.js",
+    "ws-perf-test": "./src/ws_perf_test.js",
     "websocket-server": "./src/websocket-server.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aa24615/websocket-pressure-test.git"
+    "url": "git+https://github.com/chkch/ws_perf_test.git"
   },
   "keywords": [
-    "websocket压力测试",
-    "websocket测试",
-    "长连接测试",
-    "swoole测试",
-    "workerman测试"
+    "websocket压力测试"
   ],
-  "author": "读心印",
+  "author": "chkch",
   "license": "MIT",
   "devDependencies": {
     "eslint": "^7.23.0",
