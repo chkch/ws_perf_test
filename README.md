@@ -153,36 +153,10 @@ tmux new -s ws_test
 
 # 运行测试
 ulimit -n 50000
-node --expose-gc --max-old-space-size=4096 src/ws_perf_test.js \
-  ws://your-server:9502 -c 50000 -b 500 -r --killZombie --sharedTimers \
-  -l stability.log --export result.json
+ws-perf-test ws://your-server:9502 -c 50000 -b 500 -i 500 --data wss.json -d 43200 -l stability_50k.log --export result.json --sharedTimers 
 
 # 分离会话：Ctrl+B, D
 # 重新连接：tmux attach -t ws_test
-```
-
-### 使用 PM2 运行
-
-创建 `ecosystem.config.js`：
-
-```javascript
-module.exports = {
-  apps: [{
-    name: 'ws-perf-test',
-    script: 'src/ws_perf_test.js',
-    args: 'ws://your-server:9502 -c 50000 -b 500 -r --killZombie --sharedTimers -l /var/log/ws_test.log',
-    node_args: '--expose-gc --max-old-space-size=4096',
-    max_memory_restart: '3500M',
-    log_file: '/var/log/ws_test_pm2.log',
-    time: true
-  }]
-};
-```
-
-```bash
-pm2 start ecosystem.config.js
-pm2 logs ws-perf-test
-pm2 monit
 ```
 
 ---
