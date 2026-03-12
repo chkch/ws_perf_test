@@ -27,7 +27,7 @@
     "eslint-plugin-react": "^7.23.1"
   },
   "dependencies": {
-    "cli-color": "^2.0.0",
+    "cli-color": "^2.0.4",
     "websocket": "^1.0.33",
     "ws": "^8.18.3"
   }
