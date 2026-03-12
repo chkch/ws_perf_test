@@ -20,7 +20,8 @@
 ```bash
 git clone https://github.com/chkch/ws_perf_test.git
 cd ws_perf_test
-npm install
+npm uninstall ws-perf-test -g && npm install && npm install . -g
+chmod +x /usr/local/bin/ws-perf-test 
 ```
 
 ## 快速开始
@@ -53,7 +54,7 @@ node src/ws_perf_test.js --help
 |------|------|--------|------|
 | `--msgInterval` | `-m` | 1000 | 消息发送间隔（毫秒） |
 | `--pingInterval` | - | 30000 | Ping 心跳间隔（毫秒） |
-| `--data` | - | null | 自定义消息 JSON 文件 |
+| `--data` | - | null | 自定义消息 JSON 文件: {} 或 [{},{}] |
 
 ### 测试选项
 
