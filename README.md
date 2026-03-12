@@ -145,6 +145,14 @@ ws-perf-test ws://your-server:9502 -c 50000 -b 500 -i 500 --data wss.json -d 432
 | `--export` | result.json | 导出测试结果 |
 | `--sharedTimers` | - | 共享定时器，减少开销 |
 
+
+
+### 使用 nohup 后台运行
+```bash
+# 12小时稳定性压测 
+nohup ws-perf-test ws://xxxx/v1/public -c 50000 -b 500 -i 1000 --data wss-1.json -d 43200 -l stability_50k.log --export result.json --sharedTimers > /dev/null 2>&1 & 
+```
+
 ### 使用 tmux 后台运行（推荐）
 
 ```bash
@@ -155,8 +163,10 @@ tmux new -s ws_test
 ulimit -n 50000
 ws-perf-test ws://your-server:9502 -c 50000 -b 500 -i 500 --data wss.json -d 43200 -l stability_50k.log --export result.json --sharedTimers 
 
-# 分离会话：Ctrl+B, D
+# 分离会话：按下 Ctrl+b，然后按 d [程序在后台运行]
+# 查看会话： tmux ls 
 # 重新连接：tmux attach -t ws_test
+# 清除所有会话：tmux kill-server 
 ```
 
 ---
