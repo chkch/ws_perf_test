@@ -140,10 +140,10 @@ ws-perf-test ws://your-server:9502 -c 50000 -b 500 -i 500 --data wss.json -d 432
 | `-b` | 500 | 每批 500 个，约 100 秒建立完成 |
 | `-i` | 500 | 批次间隔 500ms |
 | `--data` | wss.json | 自定义json消息文件 |
-| `-r` | - | 启用自动重连 |
-| `--sharedTimers` | - | 共享定时器，减少开销 |
+| `-d` | 43200 | 运行12小时 |
 | `-l` | stability_50k.log | 日志持久化 |
 | `--export` | result.json | 导出测试结果 |
+| `--sharedTimers` | - | 共享定时器，减少开销 |
 
 ### 使用 tmux 后台运行（推荐）
 
