@@ -6,6 +6,11 @@ const v8 = require('v8');
 const https = require('https');
 const http = require('http');
 
+// cli-color 兼容性处理                                                                                                                                                                                                                                                 
+  if (!clc.gray) {                                          
+      clc.gray = clc.blackBright || clc.white;
+  }
+
 // ========== 参数别名映射 ==========
 const ARG_ALIASES = {
     c: 'connections',
