@@ -129,7 +129,7 @@ sudo launchctl limit maxfiles 65535 65535
 # 5 万连接 7x24 小时稳定性测试
 ulimit -n 50000
 
-ws-perf-test ws://your-server:9502 -c 50000 -b 500 -i 500 --data wss.json -d 43200 -l stability_50k.log --export result.json --sharedTimers 
+ws-perf-test ws://your-server:9502 -c 50000 -b 500 -i 500 --data wss.json -d 43200 -l stability_50k.log --export result.json --sharedTimers --killZombie 
 ```
 
 **参数说明**：
@@ -144,6 +144,7 @@ ws-perf-test ws://your-server:9502 -c 50000 -b 500 -i 500 --data wss.json -d 432
 | `-l` | stability_50k.log | 日志持久化 |
 | `--export` | result.json | 导出测试结果 |
 | `--sharedTimers` | - | 共享定时器，减少开销 |
+| `--killZombie` | - | 自动终止僵尸连接 |
 
 
 
