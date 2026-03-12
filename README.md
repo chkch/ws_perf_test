@@ -28,10 +28,10 @@ chmod +x /usr/local/bin/ws-perf-test
 
 ```bash
 # 基础测试
-node src/ws_perf_test.js ws://localhost:9502 -c 1000 -d 60
+ws-perf-test ws://localhost:9502 -c 1000 -d 60
 
 # 查看帮助
-node src/ws_perf_test.js --help
+ws-perf-test --help
 ```
 
 ## 命令行参数
