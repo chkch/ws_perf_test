@@ -129,31 +129,18 @@ sudo launchctl limit maxfiles 65535 65535
 # 5 万连接 7x24 小时稳定性测试
 ulimit -n 50000
 
-node --expose-gc --max-old-space-size=4096 src/ws_perf_test.js \
-  ws://your-server:9502 \
-  -c 50000 \
-  -b 500 \
-  -i 500 \
-  -m 2000 \
-  -r \
-  --killZombie \
-  --sharedTimers \
-  -l stability_50k.log \
-  --export result.json
+ws-perf-test ws://your-server:9502 -c 50000 -b 500 -i 500 --data wss.json -d 43200 -l stability_50k.log --export result.json --sharedTimers 
 ```
 
 **参数说明**：
 
 | 参数 | 值 | 说明 |
 |------|------|------|
-| `--expose-gc` | - | 启用手动垃圾回收 |
-| `--max-old-space-size` | 4096 | 4GB 堆内存（5万连接足够） |
 | `-c` | 50000 | 5 万连接 |
 | `-b` | 500 | 每批 500 个，约 100 秒建立完成 |
 | `-i` | 500 | 批次间隔 500ms |
-| `-m` | 2000 | 每 2 秒发送消息 |
+| `--data` | wss.json | 自定义json消息文件 |
 | `-r` | - | 启用自动重连 |
-| `--killZombie` | - | 自动清理僵尸连接 |
 | `--sharedTimers` | - | 共享定时器，减少开销 |
 | `-l` | stability_50k.log | 日志持久化 |
 | `--export` | result.json | 导出测试结果 |
