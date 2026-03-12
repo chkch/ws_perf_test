@@ -96,12 +96,12 @@ ws-perf-test --help
 ulimit -n
 
 # 临时增加限制（当前会话）
-ulimit -n 100000
+ulimit -n 65535
 
 # 永久修改（需要 root）
 # 编辑 /etc/security/limits.conf 添加：
-# *         soft    nofile      100000
-# *         hard    nofile      100000
+# *         soft    nofile      65535
+# *         hard    nofile      65535
 ```
 
 #### 2. TCP 参数优化（Linux）
@@ -120,14 +120,14 @@ sudo sysctl -p
 #### 3. macOS 配置
 
 ```bash
-sudo launchctl limit maxfiles 100000 100000
+sudo launchctl limit maxfiles 65535 65535
 ```
 
 ### 推荐启动命令
 
 ```bash
 # 5 万连接 7x24 小时稳定性测试
-ulimit -n 100000
+ulimit -n 50000
 
 node --expose-gc --max-old-space-size=4096 src/ws_perf_test.js \
   ws://your-server:9502 \
@@ -165,7 +165,7 @@ node --expose-gc --max-old-space-size=4096 src/ws_perf_test.js \
 tmux new -s ws_test
 
 # 运行测试
-ulimit -n 100000
+ulimit -n 50000
 node --expose-gc --max-old-space-size=4096 src/ws_perf_test.js \
   ws://your-server:9502 -c 50000 -b 500 -r --killZombie --sharedTimers \
   -l stability.log --export result.json
@@ -249,7 +249,7 @@ pm2 monit
 ### Q1: 报错 "EMFILE: too many open files"
 
 ```bash
-ulimit -n 100000
+ulimit -n 50000
 ```
 
 ### Q2: 连接数卡在某个值上不去
