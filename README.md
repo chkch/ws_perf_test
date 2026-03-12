@@ -161,7 +161,7 @@ tmux new -s ws_test
 
 # 运行测试
 ulimit -n 50000
-ws-perf-test ws://your-server:9502 -c 50000 -b 500 -i 500 --data wss.json -d 43200 -l stability_50k.log --export result.json --sharedTimers 
+ws-perf-test ws://your-server:9502 -c 1000 -b 100 -i 500 --data wss.json -d 43200 -l stability_50k.log --export result.json --sharedTimers 
 
 # 分离会话：按下 Ctrl+b，然后按 d [程序在后台运行]
 # 查看会话： tmux ls 
