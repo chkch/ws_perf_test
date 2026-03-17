@@ -15,7 +15,6 @@ const ARG_ALIASES = {
     b: 'batch',
     i: 'interval',
     d: 'duration',
-    v: 'verbose',
     h: 'help',
     r: 'reconnect',
     l: 'log',
@@ -167,6 +166,28 @@ function getPercentileLatency(percentile) {
     return sorted[Math.min(index, sorted.length - 1)];
 }
 
+// ========== WebSocket 关闭码描述 ==========
+function getCloseCodeDesc(code) {
+    const codes = {
+        1000: '正常关闭',
+        1001: '端点离开',
+        1002: '协议错误',
+        1003: '不支持的数据类型',
+        1005: '无状态码',
+        1006: '异常关闭(无close帧)',
+        1007: '无效数据',
+        1008: '策略违规',
+        1009: '消息过大',
+        1010: '扩展协商失败',
+        1011: '服务器内部错误',
+        1012: '服务重启',
+        1013: '稍后重试',
+        1014: '网关错误',
+        1015: 'TLS握手失败',
+    };
+    return codes[code] || '未知';
+}
+
 // ========== 连接管理 ==========
 let connectionIdCounter = 0;
 
@@ -215,6 +236,23 @@ function createConnection(isReconnect = false, reconnectCount = 0) {
 
     connections.set(connId, connMeta);
 
+    // 监听底层 socket 事件，记录 TLS/连接信息
+    ws.on('upgrade', (response) => {
+        const socket = ws._socket;
+        if (socket && socket.encrypted) {
+            const cipher = socket.getCipher ? socket.getCipher() : null;
+            const cert = socket.getPeerCertificate ? socket.getPeerCertificate() : null;
+            const tlsInfo = [
+                `[${new Date().toISOString()}] #${connId} TLS握手成功`,
+                `  协议: ${socket.getProtocol ? socket.getProtocol() : 'N/A'}`,
+                cipher ? `  加密套件: ${cipher.name}` : null,
+                cert && cert.subject ? `  证书主体: ${cert.subject.CN || 'N/A'}` : null,
+                cert && cert.valid_to ? `  证书有效期: ${cert.valid_to}` : null,
+            ].filter(Boolean).join('\n');
+            log(tlsInfo);
+        }
+    });
+
     ws.on('open', () => {
         const connectTime = Date.now() - connectStartTime;
         addConnectTime(connectTime);
@@ -225,13 +263,14 @@ function createConnection(isReconnect = false, reconnectCount = 0) {
 
         // 发送订阅消息（只发送一次）
         if (subscribePayloads && !connMeta.subscribed) {
-            for (const payload of subscribePayloads) {
+            for (let i = 0; i < subscribePayloads.length; i++) {
+                const payload = subscribePayloads[i];
                 try {
                     ws.send(payload);
                     stats.subscribesSent++;
                     stats.bytesSent += BigInt(payload.length);
                 } catch (e) {
-                    // 发送失败
+                    log(`[${new Date().toISOString()}] #${connId} 订阅消息发送失败 [${i + 1}/${subscribePayloads.length}]: ${e.message}`);
                 }
             }
             connMeta.subscribed = true;
@@ -243,7 +282,9 @@ function createConnection(isReconnect = false, reconnectCount = 0) {
                 connMeta.lastPingTime = Date.now();
                 try {
                     ws.ping();
-                } catch (e) {}
+                } catch (e) {
+                    log(`[${new Date().toISOString()}] #${connId} Ping发送失败: ${e.message}`);
+                }
             }
         }, config.pingInterval);
         connMeta.pingTimer.unref();
@@ -270,12 +311,24 @@ function createConnection(isReconnect = false, reconnectCount = 0) {
         if (stats.errorTypes.size < stats.maxErrorTypes || stats.errorTypes.has(errType)) {
             stats.errorTypes.set(errType, (stats.errorTypes.get(errType) || 0) + 1);
         }
-        if (args.verbose) {
-            log(`[${new Date().toISOString()}] #${connId} 错误: ${err.code || ''} ${err.message}`);
-        }
+        // 详细错误日志（写入日志文件）
+        const errDetails = [
+            `[${new Date().toISOString()}] #${connId} WS错误`,
+            `  类型: ${errType}`,
+            `  消息: ${err.message}`,
+            err.code ? `  错误码: ${err.code}` : null,
+            err.errno ? `  errno: ${err.errno}` : null,
+            err.syscall ? `  syscall: ${err.syscall}` : null,
+            err.address ? `  地址: ${err.address}:${err.port || ''}` : null,
+            err.hostname ? `  主机名: ${err.hostname}` : null,
+            `  重连次数: ${connMeta.reconnectCount}`,
+            `  连接状态: ${ws.readyState}`,
+            err.stack ? `  堆栈: ${err.stack.split('\n').slice(1, 4).join(' <- ')}` : null,
+        ].filter(Boolean).join('\n');
+        log(errDetails);
     });
 
-    ws.on('close', (code) => {
+    ws.on('close', (code, reason) => {
         stats.closeCount++;
         activeConnections--;
         if (connMeta.pingTimer) {
@@ -283,6 +336,21 @@ function createConnection(isReconnect = false, reconnectCount = 0) {
             connMeta.pingTimer = null;
         }
         connections.delete(connId);
+
+        // 非正常关闭时记录日志
+        if (code !== 1000 && code !== 1001) {
+            const reasonStr = reason ? reason.toString() : '';
+            const codeDesc = getCloseCodeDesc(code);
+            const details = [
+                `[${new Date().toISOString()}] #${connId} 连接关闭`,
+                `  关闭码: ${code} (${codeDesc})`,
+                reasonStr ? `  原因: ${reasonStr}` : null,
+                `  存活时长: ${Date.now() - connMeta.lastActivityTime}ms`,
+                `  重连次数: ${connMeta.reconnectCount}`,
+                `  是否已订阅: ${connMeta.subscribed}`,
+            ].filter(Boolean).join('\n');
+            log(details);
+        }
 
         // 重连
         if (config.reconnect && !isShuttingDown && code !== 1000) {
@@ -292,6 +360,8 @@ function createConnection(isReconnect = false, reconnectCount = 0) {
                 setTimeout(() => {
                     if (!isShuttingDown) createConnection(true, reconnectCount + 1);
                 }, delay);
+            } else {
+                log(`[${new Date().toISOString()}] #${connId} 达到最大重连次数 ${config.maxReconnectAttempts}，放弃重连`);
             }
         }
     });
@@ -299,6 +369,19 @@ function createConnection(isReconnect = false, reconnectCount = 0) {
     ws.on('unexpected-response', (req, res) => {
         stats.connectFailed++;
         stats.errorTypes.set(`HTTP_${res.statusCode}`, (stats.errorTypes.get(`HTTP_${res.statusCode}`) || 0) + 1);
+        // 详细 HTTP 错误日志
+        let responseBody = '';
+        res.on('data', chunk => { responseBody += chunk.toString().slice(0, 500); });
+        res.on('end', () => {
+            const details = [
+                `[${new Date().toISOString()}] #${connId} HTTP握手失败`,
+                `  状态码: ${res.statusCode} ${res.statusMessage || ''}`,
+                `  请求URL: ${config.url}`,
+                `  响应头: ${JSON.stringify(res.headers || {}).slice(0, 300)}`,
+                responseBody ? `  响应体: ${responseBody.slice(0, 200)}` : null,
+            ].filter(Boolean).join('\n');
+            log(details);
+        });
     });
 
     return connMeta;
@@ -453,6 +536,7 @@ const healthCheckInterval = setInterval(() => {
     for (const [id, connMeta] of connections) {
         if (connMeta.ws.readyState === WebSocket.OPEN && now - connMeta.lastActivityTime > config.zombieTimeout) {
             if (config.killZombie) {
+                log(`[${new Date().toISOString()}] #${id} 僵尸连接清理 - 无活动时长: ${now - connMeta.lastActivityTime}ms`);
                 connMeta.ws.terminate();
                 stats.zombieKilled++;
             }
@@ -519,8 +603,7 @@ ${clc.bold('安全选项:')}
 
 ${clc.bold('测试选项:')}
   -d, --duration <seconds>     测试时长，0=无限 (默认: 0)
-  -l, --log <file>             日志文件
-  -v, --verbose                详细日志
+  -l, --log <file>             日志文件（包含详细错误信息）
   --killZombie                 自动清理僵尸连接
   --zombieTimeout <ms>         僵尸判定超时 (默认: 120000)
 
